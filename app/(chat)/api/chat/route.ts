@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   const chat = await getChatById({ id });
 
   if (!chat) {
-    const title = await generateTitleFromUserMessage({ message: userMessage });
+    const title = await generateTitleFromUserMessage({ message: userMessage, modelId });
     await saveChat({ id, userId: session.user.id, title });
   }
 
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       });
 
       const result = streamText({
-        model: customModel(model.apiIdentifier),
+        model: customModel(model.apiIdentifier, model.provider),
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 5,
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
 
               if (kind === 'text') {
                 const { fullStream } = streamText({
-                  model: customModel(model.apiIdentifier),
+                  model: customModel(model.apiIdentifier, model.provider),
                   system:
                     'Write about the given topic. Markdown is supported. Use headings wherever appropriate.',
                   prompt: title,
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
                 dataStream.writeData({ type: 'finish', content: '' });
               } else if (kind === 'code') {
                 const { fullStream } = streamObject({
-                  model: customModel(model.apiIdentifier),
+                  model: customModel(model.apiIdentifier, model.provider),
                   system: codePrompt,
                   prompt: title,
                   schema: z.object({
@@ -270,7 +270,7 @@ export async function POST(request: Request) {
 
               if (document.kind === 'text') {
                 const { fullStream } = streamText({
-                  model: customModel(model.apiIdentifier),
+                  model: customModel(model.apiIdentifier, model.provider),
                   system: updateDocumentPrompt(currentContent, 'text'),
                   prompt: description,
                   experimental_providerMetadata: {
@@ -300,7 +300,7 @@ export async function POST(request: Request) {
                 dataStream.writeData({ type: 'finish', content: '' });
               } else if (document.kind === 'code') {
                 const { fullStream } = streamObject({
-                  model: customModel(model.apiIdentifier),
+                  model: customModel(model.apiIdentifier, model.provider),
                   system: updateDocumentPrompt(currentContent, 'code'),
                   prompt: description,
                   schema: z.object({
@@ -383,7 +383,7 @@ export async function POST(request: Request) {
               > = [];
 
               const { elementStream } = streamObject({
-                model: customModel(model.apiIdentifier),
+                model: customModel(model.apiIdentifier, model.provider),
                 system:
                   'You are a help writing assistant. Given a piece of writing, please offer suggestions to improve the piece of writing and describe the change. It is very important for the edits to contain full sentences instead of just words. Max 5 suggestions.',
                 prompt: document.content,

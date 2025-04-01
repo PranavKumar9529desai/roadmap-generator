@@ -5,6 +5,7 @@ export interface Model {
   label: string;
   apiIdentifier: string;
   description: string;
+  provider?: 'openai' | 'google';
 }
 
 export const models: Array<Model> = [
@@ -23,8 +24,16 @@ export const models: Array<Model> = [
   {
     id: 'learners-amigo',
     label: "Learner's Amigo Recommender",
-    apiIdentifier: 'gpt-4o-mini',
+    apiIdentifier: 'gemini-1.5-flash',
+    provider: 'google',
     description: 'Personalized course recommender for users'
+  },
+  {
+    id: 'gemini-1.5-flash',
+    label: 'Gemini 1.5 Flash',
+    apiIdentifier: 'gemini-1.5-flash',
+    provider: 'google',
+    description: "Google's fast and versatile multimodal model"
   },
 ] as const;
 
