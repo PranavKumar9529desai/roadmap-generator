@@ -17,6 +17,7 @@ export interface RoadmapEvent {
 interface RoadmapContextState {
   roadmapEvents: RoadmapEvent[];
   roadmapTitle: string;
+  hasRoadmap: boolean;
   setRoadmapData: (title: string, events: RoadmapEvent[]) => void;
 }
 
@@ -36,17 +37,20 @@ export const RoadmapProvider: React.FC<RoadmapProviderProps> = ({
 }) => {
   const [roadmapEvents, setRoadmapEvents] = useState<RoadmapEvent[]>([]);
   const [roadmapTitle, setRoadmapTitle] = useState<string>('Generated Roadmap'); // Default title
+  const [hasRoadmap, setHasRoadmap] = useState<boolean>(false);
 
   // Function to update both title and events
   const setRoadmapData = (title: string, events: RoadmapEvent[]) => {
     setRoadmapTitle(title);
     setRoadmapEvents(events);
+    setHasRoadmap(true);
   };
 
   // Value provided by the context
   const value = {
     roadmapEvents,
     roadmapTitle,
+    hasRoadmap,
     setRoadmapData,
   };
 

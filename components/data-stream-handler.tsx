@@ -65,9 +65,7 @@ export function DataStreamHandler({ id }: { id: string }) {
         console.log('Received roadmap events, updating context:', roadmapEvents);
 
         setRoadmapData(roadmapTitle, roadmapEvents);
-
-        router.push('/roadmap');
-
+        
         return;
       }
 
