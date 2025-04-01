@@ -2,11 +2,13 @@
 
 import { useChat } from 'ai/react';
 import { useEffect, useRef, useState } from 'react';
-import { BlockKind } from './block';
-import { Suggestion } from '@/lib/db/schema';
+import type { BlockKind } from './block';
+import type { Suggestion } from '@/lib/db/schema';
 import { initialBlockData, useBlock } from '@/hooks/use-block';
 import { useUserMessageId } from '@/hooks/use-user-message-id';
 import { useSWRConfig } from 'swr';
+import { useRoadmap, type RoadmapEvent } from '@/contexts/RoadmapContext';
+import { useRouter } from 'next/navigation';
 
 type DataStreamDelta = {
   type:
@@ -19,8 +21,9 @@ type DataStreamDelta = {
     | 'clear'
     | 'finish'
     | 'user-message-id'
-    | 'kind';
-  content: string | Suggestion;
+    | 'kind'
+    | 'roadmap-creation';
+  content: string | Suggestion | RoadmapEvent[];
 };
 
 export function DataStreamHandler({ id }: { id: string }) {
@@ -28,6 +31,8 @@ export function DataStreamHandler({ id }: { id: string }) {
   const { setUserMessageIdFromServer } = useUserMessageId();
   const { setBlock } = useBlock();
   const lastProcessedIndex = useRef(-1);
+  const { setRoadmapData } = useRoadmap();
+  const router = useRouter();
 
   const { mutate } = useSWRConfig();
   const [optimisticSuggestions, setOptimisticSuggestions] = useState<
@@ -51,6 +56,18 @@ export function DataStreamHandler({ id }: { id: string }) {
     (newDeltas as DataStreamDelta[]).forEach((delta: DataStreamDelta) => {
       if (delta.type === 'user-message-id') {
         setUserMessageIdFromServer(delta.content as string);
+        return;
+      }
+
+      if (delta.type === 'roadmap-creation') {
+        const roadmapEvents = delta.content as RoadmapEvent[];
+        const roadmapTitle = "AI Generated Roadmap";
+        console.log('Received roadmap events, updating context:', roadmapEvents);
+
+        setRoadmapData(roadmapTitle, roadmapEvents);
+
+        router.push('/roadmap');
+
         return;
       }
 
@@ -143,7 +160,7 @@ export function DataStreamHandler({ id }: { id: string }) {
         }
       });
     });
-  }, [dataStream, setBlock, setUserMessageIdFromServer]);
+  }, [dataStream, setBlock, setUserMessageIdFromServer, setRoadmapData, router]);
 
   return null;
 }

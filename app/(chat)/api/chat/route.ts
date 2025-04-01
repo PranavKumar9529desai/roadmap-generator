@@ -40,7 +40,8 @@ type AllowedTools =
   | 'createDocument'
   | 'updateDocument'
   | 'requestSuggestions'
-  | 'getWeather';
+  | 'getWeather'
+  | 'createRoadmap';
 
 const blocksTools: AllowedTools[] = [
   'createDocument',
@@ -49,7 +50,8 @@ const blocksTools: AllowedTools[] = [
 ];
 
 const weatherTools: AllowedTools[] = ['getWeather'];
-const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
+const roadmapTools: AllowedTools[] = ['createRoadmap'];
+const allTools: AllowedTools[] = [...blocksTools, ...weatherTools, ...roadmapTools];
 
 export async function POST(request: Request) {
   const {
@@ -435,6 +437,24 @@ export async function POST(request: Request) {
                 title: document.title,
                 kind: document.kind,
                 message: 'Suggestions have been added to the document',
+              };
+            },
+          },
+          createRoadmap: {
+            description: 'Creates a learning plan or roadmap with a list of steps or events. Use this when the user asks for a plan, schedule, or roadmap.',
+            parameters: z.object({
+              roadmapEvents: z.array(z.object({
+                id: z.string().describe('A unique identifier for the roadmap event (e.g., "topic-1", "week-1-react").'),
+                title: z.string().describe('The display name or title for the roadmap event (e.g., "Introduction to JavaScript", "Week 1: Setup").'),
+              })).describe('An array of events representing the steps or stages of the roadmap.'),
+            }),
+            execute: async ({ roadmapEvents }) => {
+              console.log('Executing createRoadmap tool with events:', roadmapEvents);
+              dataStream.writeData({ type: 'roadmap-creation', content: roadmapEvents });
+
+              return {
+                success: true,
+                message: `Roadmap created with ${roadmapEvents.length} event(s). The roadmap is being displayed.`,
               };
             },
           },
