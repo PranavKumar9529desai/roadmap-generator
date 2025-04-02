@@ -1,9 +1,8 @@
-import { ChatRequestOptions, Message } from 'ai';
+import type { ChatRequestOptions, Message } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { useScrollToBottom } from './use-scroll-to-bottom';
-import { Overview } from './overview';
 import { memo } from 'react';
-import { Vote } from '@/lib/db/schema';
+import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 
 interface MessagesProps {
@@ -40,22 +39,26 @@ function PureMessages({
     >
       {/* {messages.length === 0 && <Overview />} */}
 
-      {messages.map((message, index) => (
-        <PreviewMessage
-          key={message.id}
-          chatId={chatId}
-          message={message}
-          isLoading={isLoading && messages.length - 1 === index}
-          vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
-              : undefined
-          }
-          setMessages={setMessages}
-          reload={reload}
-          isReadonly={isReadonly}
-        />
-      ))}
+      {messages.map((message, index) => {
+        const isLastMessage = index === messages.length - 1;
+        return (
+          <PreviewMessage
+            key={message.id}
+            chatId={chatId}
+            message={message}
+            isLoading={isLoading && isLastMessage}
+            vote={
+              votes
+                ? votes.find((vote) => vote.messageId === message.id)
+                : undefined
+            }
+            setMessages={setMessages}
+            reload={reload}
+            isReadonly={isReadonly}
+            isLastMessage={isLastMessage}
+          />
+        );
+      })}
 
       {isLoading &&
         messages.length > 0 &&

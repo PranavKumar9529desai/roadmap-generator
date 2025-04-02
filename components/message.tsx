@@ -44,7 +44,7 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
-  const { roadmapData } = useRoadmap();
+  const { hasRoadmap } = useRoadmap();
 
   return (
     <AnimatePresence>
@@ -110,12 +110,9 @@ const PurePreviewMessage = ({
                 >
                   <Markdown>{message.content as string}</Markdown>
 
-                  {message.role === 'assistant' &&
-                    roadmapData &&
-                    roadmapData.events.length > 0 &&
-                    (message.content as string).includes(
-                      "I've created a roadmap for you",
-                    ) && <RoadmapButton />}
+                  {message.role === 'assistant' && hasRoadmap && (
+                    <RoadmapButton />
+                  )}
                 </div>
               </div>
             )}

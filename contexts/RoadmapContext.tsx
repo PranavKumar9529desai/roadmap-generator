@@ -5,6 +5,7 @@ import React, {
   useState,
   useContext,
   type ReactNode,
+  useCallback,
 } from 'react';
 
 // Define the shape of a roadmap event
@@ -41,18 +42,18 @@ export const RoadmapProvider: React.FC<RoadmapProviderProps> = ({
   const [hasRoadmap, setHasRoadmap] = useState<boolean>(false);
 
   // Function to update both title and events
-  const setRoadmapData = (title: string, events: RoadmapEvent[]) => {
+  const setRoadmapData = useCallback((title: string, events: RoadmapEvent[]) => {
     setRoadmapTitle(title);
     setRoadmapEvents(events);
     setHasRoadmap(true);
-  };
+  }, []);
 
   // Function to clear the roadmap data
-  const clearRoadmapData = () => {
+  const clearRoadmapData = useCallback(() => {
     setRoadmapEvents([]);
     setRoadmapTitle('Generated Roadmap'); // Reset to default or consider empty string ""
     setHasRoadmap(false);
-  };
+  }, []);
 
   // Value provided by the context
   const value = {
