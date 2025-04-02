@@ -30,6 +30,7 @@ const PurePreviewMessage = ({
   setMessages,
   reload,
   isReadonly,
+  isLastMessage,
 }: {
   chatId: string;
   message: Message;
@@ -42,6 +43,7 @@ const PurePreviewMessage = ({
     chatRequestOptions?: ChatRequestOptions,
   ) => Promise<string | null | undefined>;
   isReadonly: boolean;
+  isLastMessage: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const { hasRoadmap } = useRoadmap();
@@ -110,9 +112,9 @@ const PurePreviewMessage = ({
                 >
                   <Markdown>{message.content as string}</Markdown>
 
-                  {message.role === 'assistant' && hasRoadmap && (
-                    <RoadmapButton />
-                  )}
+                  {message.role === 'assistant' &&
+                    hasRoadmap &&
+                    isLastMessage && <RoadmapButton />}
                 </div>
               </div>
             )}
@@ -160,6 +162,27 @@ const PurePreviewMessage = ({
                             result={result}
                             isReadonly={isReadonly}
                           />
+                        ) : toolName === 'userProfileGeneration' ? (
+                          <div className="rounded-md bg-green-50 p-4 border border-green-200">
+                            <div className="flex">
+                              <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              <div className="ml-3">
+                                <h3 className="text-sm font-medium text-green-800">Profile Created</h3>
+                                <div className="mt-2 text-sm text-green-700">
+                                  <p>User profile has been created{result?.profile?.userProfile?.name ? ` for ${result.profile.userProfile.name}` : ''}</p>
+                                  <p className="mt-1">Visit your <a href="/dashboard" className="font-medium underline" onClick={(e) => {
+                                    // Force a page reload to ensure fresh data
+                                    e.preventDefault();
+                                    window.location.href = '/dashboard';
+                                  }}>dashboard</a> to see your profile!</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         ) : (
                           <pre>{JSON.stringify(result, null, 2)}</pre>
                         )}
@@ -189,6 +212,16 @@ const PurePreviewMessage = ({
                           args={args}
                           isReadonly={isReadonly}
                         />
+                      ) : toolName === 'userProfileGeneration' ? (
+                        <div className="animate-pulse p-4 border border-muted rounded-md">
+                          <div className="flex">
+                            <div className="flex-shrink-0 bg-muted-foreground/20 h-5 w-5 rounded-full" />
+                            <div className="ml-3">
+                              <div className="h-4 w-32 bg-muted-foreground/20 rounded mb-2" />
+                              <div className="h-3 w-48 bg-muted-foreground/20 rounded" />
+                            </div>
+                          </div>
+                        </div>
                       ) : null}
                     </div>
                   );
@@ -225,6 +258,7 @@ export const PreviewMessage = memo(
     )
       return false;
     if (!equal(prevProps.vote, nextProps.vote)) return false;
+    if (prevProps.isLastMessage !== nextProps.isLastMessage) return false;
 
     return true;
   },

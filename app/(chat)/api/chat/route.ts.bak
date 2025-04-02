@@ -505,24 +505,10 @@ export async function POST(request: Request) {
                 };
               } catch (error) {
                 console.error('Error saving user profile:', error);
-                // Create a profile object even if saving to IndexedDB failed
-                const profileData = {
-                  userProfile: {
-                    name,
-                    education: education || '',
-                    pastExperience: pastExperience || '',
-                    learningGoals: learningGoals || '',
-                    avatarFallback: name.charAt(0).toUpperCase(),
-                  },
-                  currentGoal
-                };
-                
-                // Return a partial success with the profile data even if storage failed
                 return {
-                  success: true,
-                  message: `User profile processed for ${name} (Note: Profile storage encountered an issue but the information was processed)`,
-                  profile: profileData,
-                  warning: "Your profile information was processed but there was an issue with browser storage. Your profile data may not persist between sessions."
+                  success: false,
+                  message: 'Failed to save user profile',
+                  error: String(error)
                 };
               }
             },

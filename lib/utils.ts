@@ -14,6 +14,48 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Activity type for the GitHub-like heatmap calendar
+export interface Activity {
+  date: string; // ISO string date
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+}
+
+/**
+ * Generates mock activity data for the GitHub-like activity calendar
+ * @param weeks Number of weeks to generate data for (default: 52 weeks - 1 year)
+ * @returns Array of activity data
+ */
+export function generateActivityData(weeks = 52): Activity[] {
+  const data: Activity[] = [];
+  const today = new Date();
+
+  // Generate data for the specified number of weeks
+  for (let i = 0; i < weeks * 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+
+    // Generate random activity count (0-10)
+    const count = Math.floor(Math.random() * 11);
+
+    // Determine level based on count
+    let level: 0 | 1 | 2 | 3 | 4;
+    if (count === 0) level = 0;
+    else if (count < 3) level = 1;
+    else if (count < 5) level = 2;
+    else if (count < 8) level = 3;
+    else level = 4;
+
+    data.push({
+      date: date.toISOString().split('T')[0],
+      count,
+      level,
+    });
+  }
+
+  return data;
+}
+
 interface ApplicationError extends Error {
   info: string;
   status: number;
