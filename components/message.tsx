@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import RoadmapButton from './roadmap-button';
+import { useRoadmap } from '@/contexts/RoadmapContext';
 
 const PurePreviewMessage = ({
   chatId,
@@ -43,6 +44,7 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const { roadmapData } = useRoadmap();
 
   return (
     <AnimatePresence>
@@ -108,7 +110,12 @@ const PurePreviewMessage = ({
                 >
                   <Markdown>{message.content as string}</Markdown>
 
-                  {message.role === 'assistant' && <RoadmapButton />}
+                  {message.role === 'assistant' &&
+                    roadmapData &&
+                    roadmapData.events.length > 0 &&
+                    (message.content as string).includes(
+                      "I've created a roadmap for you",
+                    ) && <RoadmapButton />}
                 </div>
               </div>
             )}

@@ -2,12 +2,13 @@
 
 import type { Attachment, Message } from 'ai';
 import { useChat } from 'ai/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher } from '@/lib/utils';
+import { useRoadmap } from '@/contexts/RoadmapContext';
 
 import { Block } from './block';
 import { MultimodalInput } from './multimodal-input';
@@ -29,6 +30,11 @@ export function Chat({
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
+  const { clearRoadmapData } = useRoadmap();
+
+  useEffect(() => {
+    clearRoadmapData();
+  }, [id, clearRoadmapData]);
 
   const {
     messages,

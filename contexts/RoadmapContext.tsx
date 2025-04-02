@@ -19,6 +19,7 @@ interface RoadmapContextState {
   roadmapTitle: string;
   hasRoadmap: boolean;
   setRoadmapData: (title: string, events: RoadmapEvent[]) => void;
+  clearRoadmapData: () => void;
 }
 
 // Create the context with a default value (can be undefined or null, handled in consumer)
@@ -46,12 +47,20 @@ export const RoadmapProvider: React.FC<RoadmapProviderProps> = ({
     setHasRoadmap(true);
   };
 
+  // Function to clear the roadmap data
+  const clearRoadmapData = () => {
+    setRoadmapEvents([]);
+    setRoadmapTitle('Generated Roadmap'); // Reset to default or consider empty string ""
+    setHasRoadmap(false);
+  };
+
   // Value provided by the context
   const value = {
     roadmapEvents,
     roadmapTitle,
     hasRoadmap,
     setRoadmapData,
+    clearRoadmapData,
   };
 
   return (
