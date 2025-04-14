@@ -265,34 +265,3 @@ export default function CoursePage() {
     </div>
   );
 }
-                                </div>
-                                {resource.url && (
-                                  <a
-                                    href={resource.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ml-auto bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded"
-                                  >
-                                    Open
-                                  </a>
-                                )}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </div>
-                )}
-              </Card>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="text-center">
-          <p>No course plan selected.</p>
-        </div>
-      )}
-    </div>
-  );
-}

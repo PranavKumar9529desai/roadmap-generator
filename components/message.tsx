@@ -23,6 +23,7 @@ import RoadmapButton from './roadmap-button';
 import { useRoadmap } from '@/contexts/RoadmapContext';
 import { ViewCourseButton } from './view-course-button';
 import { ViewProfileButton } from './view-profile-button';
+import { CoursePlanPreview } from './course-plan-preview';
 
 const PurePreviewMessage = ({
   chatId,
@@ -187,23 +188,36 @@ const PurePreviewMessage = ({
                             </div>
                           </div>
                         ) : toolName === 'generateInitialCoursePlan' ? (
-                          <div className="rounded-md bg-green-50 p-4 border border-green-200">
-                            <div className="flex">
-                              <div className="shrink-0">
-                                <svg className="size-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                              <div className="ml-3">
-                                <h3 className="text-sm font-medium text-green-800">Course Plan Generated</h3>
-                                <div className="mt-2 text-sm text-green-700">
-                                  <p>{result?.message || "Your course plan has been generated successfully."}</p>
+                          <div>
+                            <div className="rounded-md bg-green-50 p-4 border border-green-200 mb-4">
+                              <div className="flex">
+                                <div className="shrink-0">
+                                  <svg className="size-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
                                 </div>
-                                {result?.showCourseButton && (
-                                  <ViewCourseButton courseUrl={result.courseUrl || '/course'} />
-                                )}
+                                <div className="ml-3">
+                                  <h3 className="text-sm font-medium text-green-800">Course Plan Generated</h3>
+                                  <div className="mt-2 text-sm text-green-700">
+                                    <p>{result?.message || "Your course plan has been generated. Please review it and provide feedback."}</p>
+                                  </div>
+                                </div>
                               </div>
                             </div>
+                            {result?.coursePlan && (
+                              <div className="my-4">
+                                <CoursePlanPreview 
+                                  title={result.coursePlan.title}
+                                  description={result.coursePlan.description}
+                                  learningObjectives={result.coursePlan.learningObjectives}
+                                  totalEstimatedTime={result.coursePlan.totalEstimatedTime}
+                                  modules={result.coursePlan.modules}
+                                />
+                                <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                                  <p>Review this course plan and provide feedback. You can suggest adding new topics, removing existing ones, or adjusting the structure. Once you're satisfied, say "Save this course plan" and I'll save it for you.</p>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : toolName === 'saveCoursePlan' ? (
                           <div className="rounded-md bg-green-50 p-4 border border-green-200">
@@ -224,6 +238,14 @@ const PurePreviewMessage = ({
                               </div>
                             </div>
                           </div>
+                        ) : toolName === 'coursePlanPreview' ? (
+                          <CoursePlanPreview 
+                            title={result?.title || "Course Plan"} 
+                            description={result?.description || ""}
+                            learningObjectives={result?.learningObjectives}
+                            totalEstimatedTime={result?.totalEstimatedTime}
+                            modules={result?.modules}
+                          />
                         ) : (
                           <pre>{JSON.stringify(result, null, 2)}</pre>
                         )}
