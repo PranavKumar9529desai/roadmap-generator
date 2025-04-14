@@ -2,6 +2,7 @@ import { config } from 'dotenv';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { migrate } from 'drizzle-orm/neon-serverless/migrator';
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import ws from 'ws';
 
 config({
   path: '.env.local',
@@ -12,7 +13,10 @@ const runMigrate = async () => {
     throw new Error('DATABASE_URL is not defined');
   }
 
+  // Configure WebSocket for Neon
   neonConfig.fetchConnectionCache = true;
+  neonConfig.webSocketConstructor = ws;
+  
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const db = drizzle(pool);
 

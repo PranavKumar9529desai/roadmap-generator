@@ -3,6 +3,7 @@ import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { and, asc, desc, eq, gt, gte } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import ws from 'ws';
 
 import {
   user,
@@ -15,14 +16,15 @@ import {
   message,
   vote,
 } from './schema';
-import { BlockKind } from '@/components/block';
+import type { BlockKind } from '@/components/block';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
 // https://authjs.dev/reference/adapter/drizzle
 
-// biome-ignore lint: Forbidden non-null assertion.
+// Configure WebSocket for Neon
 neonConfig.fetchConnectionCache = true;
+neonConfig.webSocketConstructor = ws;
 
 // biome-ignore lint: Forbidden non-null assertion.
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });

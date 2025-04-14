@@ -1,17 +1,16 @@
 import {
-  DataStreamWriter,
+  type DataStreamWriter,
   experimental_generateImage,
   smoothStream,
   streamObject,
   streamText,
   tool,
 } from 'ai';
-import { Model } from '../models';
-import { Session } from 'next-auth';
+import type { Model } from '../models';
+import type { Session } from 'next-auth';
 import { z } from 'zod';
 import { getDocumentById, saveDocument } from '@/lib/db/queries';
 import { customModel, imageGenerationModel } from '..';
-import { updateDocumentPrompt } from '../prompts';
 
 interface UpdateDocumentProps {
   model: Model;
@@ -51,18 +50,14 @@ export const updateDocument = ({
 
       if (document.kind === 'text') {
         const { fullStream } = streamText({
-          model: customModel(model.apiIdentifier),
-          system: updateDocumentPrompt(currentContent, 'text'),
+          model: customModel(model.apiIdentifier, model.provider),
+          system:
+            'You are tasked with updating a document based on the provided prompt. Preserve the formatting and structure of the original document.',
+          prompt: `Instructions: ${description}
+
+Document:
+${currentContent}`,
           experimental_transform: smoothStream({ chunking: 'word' }),
-          prompt: description,
-          experimental_providerMetadata: {
-            openai: {
-              prediction: {
-                type: 'content',
-                content: currentContent,
-              },
-            },
-          },
         });
 
         for await (const delta of fullStream) {
@@ -82,9 +77,13 @@ export const updateDocument = ({
         dataStream.writeData({ type: 'finish', content: '' });
       } else if (document.kind === 'code') {
         const { fullStream } = streamObject({
-          model: customModel(model.apiIdentifier),
-          system: updateDocumentPrompt(currentContent, 'code'),
-          prompt: description,
+          model: customModel(model.apiIdentifier, model.provider),
+          system:
+            'You are tasked with updating a document based on the provided prompt. Preserve the formatting and structure of the original document.',
+          prompt: `Instructions: ${description}
+
+Code:
+${currentContent}`,
           schema: z.object({
             code: z.string(),
           }),

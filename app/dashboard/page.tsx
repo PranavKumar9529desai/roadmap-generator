@@ -141,7 +141,7 @@ function DashboardPage(props: DashboardProps = defaultProps) {
                 </div>
               </div>
 
-              <Avatar className="h-20 w-20 border-2 border-white shadow-sm">
+              <Avatar className="size-20 border-2 border-white shadow-sm">
                 <AvatarImage
                   src={userProfile.avatarUrl || ''}
                   alt={userProfile.name}
@@ -178,7 +178,7 @@ function DashboardPage(props: DashboardProps = defaultProps) {
                     (color) => (
                       <div
                         key={color}
-                        className="w-3 h-3 rounded-sm"
+                        className="size-3 rounded-sm"
                         style={{ backgroundColor: color }}
                       />
                     ),
@@ -367,7 +367,7 @@ export default function Dashboard() {
   // Effect to refresh the data when the component mounts
   useEffect(() => {
     if (!isClientSide) return;
-
+    
     // Force a refresh of the profile data when the dashboard is visited
     fetchUserProfile();
 
@@ -377,13 +377,13 @@ export default function Dashboard() {
     }, 500);
 
     return () => clearTimeout(refreshTimer);
-  }, [isClientSide]); // Only run when isClientSide changes to true
+  }, [isClientSide, fetchUserProfile]); // Added fetchUserProfile dependency
 
   // Effect to fetch user profile from IndexedDB or in-memory storage
   useEffect(() => {
     if (!isClientSide) return;
     fetchUserProfile();
-  }, [activityData, isClientSide]); // Add activityData and isClientSide as dependencies
+  }, [activityData, isClientSide, fetchUserProfile]); // Added fetchUserProfile dependency
 
   // Only render the dashboard when on the client side to prevent hydration issues
   if (!isClientSide) {
