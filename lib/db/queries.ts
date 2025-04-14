@@ -17,6 +17,7 @@ import {
   vote,
   userProfile,
   type UserProfile,
+  coursePlan,
 } from './schema';
 import type { BlockKind } from '@/components/block';
 
@@ -411,6 +412,113 @@ export async function getUserProfileByUserId(userId: string): Promise<UserProfil
     return profiles.length > 0 ? profiles[0] : null;
   } catch (error) {
     console.error('Failed to get user profile from database:', error);
+    throw error;
+  }
+}
+
+export async function saveCoursePlan({
+  userId,
+  title,
+  description,
+  learningObjectives,
+  totalEstimatedTime,
+  modules,
+}: {
+  userId: string;
+  title: string;
+  description: string;
+  learningObjectives?: string[];
+  totalEstimatedTime?: string;
+  modules: {
+    id: string;
+    title: string;
+    description: string;
+    estimatedTime: string;
+    topics: {
+      id: string;
+      title: string;
+      estimatedTime: string;
+      completed: boolean;
+    }[];
+    resources: {
+      type: 'video' | 'article' | 'quiz';
+      title: string;
+      url?: string;
+      duration?: string;
+      estimatedReadTime?: string;
+      questions?: number;
+    }[];
+  }[];
+}) {
+  try {
+    // Check if a course plan already exists for this user
+    const existingCoursePlans = await db
+      .select()
+      .from(coursePlan)
+      .where(eq(coursePlan.userId, userId));
+
+    const now = new Date();
+
+    if (existingCoursePlans.length > 0) {
+      // Update existing course plan - for simplicity, we'll just update the most recent one
+      // In a production app, you might want to create a new one or have a more complex update strategy
+      const latestCoursePlan = existingCoursePlans.reduce((latest, current) => 
+        latest.updatedAt > current.updatedAt ? latest : current
+      );
+      
+      return await db
+        .update(coursePlan)
+        .set({
+          title,
+          description,
+          learningObjectives,
+          totalEstimatedTime,
+          modules,
+          updatedAt: now,
+        })
+        .where(eq(coursePlan.id, latestCoursePlan.id));
+    } else {
+      // Create new course plan
+      return await db.insert(coursePlan).values({
+        userId,
+        title,
+        description,
+        learningObjectives,
+        totalEstimatedTime,
+        modules,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  } catch (error) {
+    console.error('Failed to save course plan to database:', error);
+    throw error;
+  }
+}
+
+export async function getCoursePlansByUserId(userId: string) {
+  try {
+    return await db
+      .select()
+      .from(coursePlan)
+      .where(eq(coursePlan.userId, userId))
+      .orderBy(desc(coursePlan.updatedAt));
+  } catch (error) {
+    console.error('Failed to get course plans by user ID from database:', error);
+    throw error;
+  }
+}
+
+export async function getCoursePlanById(id: string) {
+  try {
+    const plans = await db
+      .select()
+      .from(coursePlan)
+      .where(eq(coursePlan.id, id));
+    
+    return plans.length > 0 ? plans[0] : null;
+  } catch (error) {
+    console.error('Failed to get course plan by ID from database:', error);
     throw error;
   }
 }

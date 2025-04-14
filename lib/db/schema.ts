@@ -133,3 +133,39 @@ export const suggestion = pgTable(
 );
 
 export type Suggestion = InferSelectModel<typeof suggestion>;
+
+// CoursePlan table for storing detailed course structures
+export const coursePlan = pgTable('CoursePlan', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  learningObjectives: json('learningObjectives').$type<string[]>(),
+  totalEstimatedTime: varchar('totalEstimatedTime', { length: 64 }),
+  modules: json('modules').$type<{
+    id: string;
+    title: string;
+    description: string;
+    estimatedTime: string;
+    topics: {
+      id: string;
+      title: string;
+      estimatedTime: string;
+      completed: boolean;
+    }[];
+    resources: {
+      type: 'video' | 'article' | 'quiz';
+      title: string;
+      url?: string;
+      duration?: string;
+      estimatedReadTime?: string;
+      questions?: number;
+    }[];
+  }[]>(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
+
+export type CoursePlan = InferSelectModel<typeof coursePlan>;

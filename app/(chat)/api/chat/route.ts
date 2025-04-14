@@ -21,6 +21,7 @@ import {
   getChatById,
   getDocumentById,
   saveChat,
+  saveCoursePlan,
   saveDocument,
   saveMessages,
   saveSuggestions,
@@ -42,7 +43,9 @@ type AllowedTools =
   | 'requestSuggestions'
   | 'getWeather'
   | 'createRoadmap'
-  | 'userProfileGeneration';
+  | 'userProfileGeneration'
+  | 'generateInitialCoursePlan'
+  | 'saveCoursePlan';
 
 const blocksTools: AllowedTools[] = [
   'createDocument',
@@ -53,7 +56,8 @@ const blocksTools: AllowedTools[] = [
 const weatherTools: AllowedTools[] = ['getWeather'];
 const roadmapTools: AllowedTools[] = ['createRoadmap'];
 const profileTools: AllowedTools[] = ['userProfileGeneration'];
-const allTools: AllowedTools[] = [...blocksTools, ...weatherTools, ...roadmapTools, ...profileTools];
+const courseTools: AllowedTools[] = ['generateInitialCoursePlan', 'saveCoursePlan'];
+const allTools: AllowedTools[] = [...blocksTools, ...weatherTools, ...roadmapTools, ...profileTools, ...courseTools];
 
 export async function POST(request: Request) {
   const {
@@ -555,6 +559,144 @@ export async function POST(request: Request) {
                   dashboardUrl: '/dashboard',
                   profile: profileData,
                   warning: "Your profile information was processed but there was an issue with storage. Your profile data may not persist between sessions."
+                };
+              }
+            },
+          },
+          generateInitialCoursePlan: {
+            description: "Generates an initial detailed course plan structure based on the user's profile and learning goals. Use this after the user confirms they want a detailed plan.",
+            parameters: z.object({
+              learningGoals: z.string().describe("User's learning objectives and aspirations."),
+              priorKnowledge: z.string().optional().describe("The user's prior knowledge level in the subject area."),
+              dailyTimeCommitment: z.string().optional().describe("How much time the user can dedicate daily to learning."),
+              currentGoal: z.string().describe("The specific current learning goal for the user to focus on."),
+            }),
+            execute: async ({ learningGoals, priorKnowledge, dailyTimeCommitment, currentGoal }) => {
+              console.log('Generating course plan for goal:', currentGoal);
+              
+              try {
+                // Generate a course plan using the AI
+                const { object: coursePlanData } = await streamObject({
+                  model: customModel(model.apiIdentifier, model.provider),
+                  system: 'You are an expert curriculum designer. Create a detailed, structured course plan based on the user\'s current learning goal, prior knowledge, and available time. The course should be structured like online learning platforms such as Udemy or Coursera, with clear modules, topics, resources and time estimates.',
+                  prompt: `
+                  Create a comprehensive course plan for a user with the following profile:
+                  - Learning Goals: ${learningGoals}
+                  - Current Goal: ${currentGoal}
+                  - Prior Knowledge: ${priorKnowledge || 'Not specified'}
+                  - Daily Time Commitment: ${dailyTimeCommitment || 'Not specified'}
+                  
+                  Structure the course with modules, topics, and resources as you would find on online learning platforms like Udemy or Coursera.
+                  `,
+                  schema: z.object({
+                    title: z.string().describe('The title of the course'),
+                    description: z.string().describe('A detailed description of the course'),
+                    learningObjectives: z.array(z.string()).describe('Key learning objectives of the course'),
+                    totalEstimatedTime: z.string().describe('Total estimated time to complete the course'),
+                    modules: z.array(z.object({
+                      id: z.string().describe('Unique identifier for the module'),
+                      title: z.string().describe('Title of the module'),
+                      description: z.string().describe('Description of what the module covers'),
+                      estimatedTime: z.string().describe('Estimated time to complete this module'),
+                      topics: z.array(z.object({
+                        id: z.string().describe('Unique identifier for the topic'),
+                        title: z.string().describe('Title of the topic'),
+                        estimatedTime: z.string().describe('Estimated time to complete this topic'),
+                        completed: z.boolean().default(false).describe('Whether this topic has been completed'),
+                      })),
+                      resources: z.array(z.object({
+                        type: z.enum(['video', 'article', 'quiz']).describe('Type of resource'),
+                        title: z.string().describe('Title of the resource'),
+                        url: z.string().optional().describe('URL of the resource, if applicable'),
+                        duration: z.string().optional().describe('Duration of video resources'),
+                        estimatedReadTime: z.string().optional().describe('Estimated time to read article resources'),
+                        questions: z.number().optional().describe('Number of questions for quiz resources'),
+                      })),
+                    })),
+                  }),
+                });
+
+                // Redirect to the course page
+                return {
+                  success: true,
+                  message: "Your course plan has been generated successfully. Click below to view your course plan.",
+                  showCourseButton: true,
+                  courseUrl: '/course',
+                  coursePlan: coursePlanData,
+                };
+              } catch (error) {
+                console.error('Error generating course plan:', error);
+                return {
+                  success: false,
+                  message: "There was an error generating your course plan. Please try again.",
+                };
+              }
+            },
+          },
+          saveCoursePlan: {
+            description: "Saves the finalized course plan to the user's profile after they have reviewed and approved it.",
+            parameters: z.object({
+              title: z.string().describe('The title of the course'),
+              description: z.string().describe('A detailed description of the course'),
+              learningObjectives: z.array(z.string()).optional().describe('Key learning objectives of the course'),
+              totalEstimatedTime: z.string().optional().describe('Total estimated time to complete the course'),
+              modules: z.array(z.object({
+                id: z.string().describe('Unique identifier for the module'),
+                title: z.string().describe('Title of the module'),
+                description: z.string().describe('Description of what the module covers'),
+                estimatedTime: z.string().describe('Estimated time to complete this module'),
+                topics: z.array(z.object({
+                  id: z.string().describe('Unique identifier for the topic'),
+                  title: z.string().describe('Title of the topic'),
+                  estimatedTime: z.string().describe('Estimated time to complete this topic'),
+                  completed: z.boolean().default(false).describe('Whether this topic has been completed'),
+                })),
+                resources: z.array(z.object({
+                  type: z.enum(['video', 'article', 'quiz']).describe('Type of resource'),
+                  title: z.string().describe('Title of the resource'),
+                  url: z.string().optional().describe('URL of the resource, if applicable'),
+                  duration: z.string().optional().describe('Duration of video resources'),
+                  estimatedReadTime: z.string().optional().describe('Estimated time to read article resources'),
+                  questions: z.number().optional().describe('Number of questions for quiz resources'),
+                })),
+              })),
+            }),
+            execute: async ({ title, description, learningObjectives, totalEstimatedTime, modules }) => {
+              console.log('Saving course plan:', title);
+              
+              if (!session.user?.id) {
+                return {
+                  success: false,
+                  message: "You must be logged in to save a course plan.",
+                };
+              }
+              
+              try {
+                // Save to database
+                await saveCoursePlan({
+                  userId: session.user.id,
+                  title,
+                  description,
+                  learningObjectives,
+                  totalEstimatedTime,
+                  modules,
+                });
+                
+                // Record the activity
+                const { recordActivity } = await import('@/app/lib/db');
+                await recordActivity('course-plan-create');
+                
+                return {
+                  success: true,
+                  message: "Your course plan has been saved successfully. You can access it from your dashboard or view it now.",
+                  showCourseButton: true,
+                  courseUrl: '/course',
+                };
+              } catch (error) {
+                console.error('Error saving course plan:', error);
+                return {
+                  success: false,
+                  message: "There was an error saving your course plan. Please try again.",
                 };
               }
             },
