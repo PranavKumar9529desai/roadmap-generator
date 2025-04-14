@@ -580,7 +580,7 @@ export async function POST(request: Request) {
                 console.log('Attempting to call generateObject for course plan...'); // Log before the call
                 const { object: coursePlanData } = await generateObject({
                   model: customModel(model.apiIdentifier, model.provider),
-                  system: 'You are an expert curriculum designer. Create a detailed, structured course plan based on the user\'s current learning goal, prior knowledge, and available time. The course should be structured like online learning platforms such as Udemy or Coursera, with clear modules, topics, resources and time estimates.',
+                  system: 'You are an expert curriculum designer. Create a detailed, structured course plan based on the user\'s current learning goal, prior knowledge, and available time. The course should be structured like online learning platforms such as Udemy or Coursera, with clear modules, topics, resources and time estimates. Limit the number of modules to a maximum of 5.', // Added module limit instruction
                   prompt: `
                   Create a comprehensive course plan for a user with the following profile:
                   - Learning Goals: ${learningGoals}
@@ -588,8 +588,8 @@ export async function POST(request: Request) {
                   - Prior Knowledge: ${priorKnowledge || 'Not specified'}
                   - Daily Time Commitment: ${dailyTimeCommitment || 'Not specified'}
                   
-                  Structure the course with modules, topics, and resources as you would find on online learning platforms like Udemy or Coursera.
-                  `,
+                  Structure the course with modules (max 5), topics, and resources as you would find on online learning platforms like Udemy or Coursera. Ensure all fields in the schema are populated correctly, using null where appropriate for optional fields like url or questions if no value is applicable.
+                  `, // Added clarification for null values
                   schema: z.object({
                     title: z.string().describe('The title of the course'),
                     description: z.string().describe('A detailed description of the course'),
@@ -609,12 +609,12 @@ export async function POST(request: Request) {
                       resources: z.array(z.object({
                         type: z.enum(['video', 'article', 'quiz']).describe('Type of resource'),
                         title: z.string().describe('Title of the resource'),
-                        url: z.string().optional().describe('URL of the resource, if applicable'),
-                        duration: z.string().optional().describe('Duration of video resources'),
-                        estimatedReadTime: z.string().optional().describe('Estimated time to read article resources'),
-                        questions: z.number().optional().describe('Number of questions for quiz resources'),
+                        url: z.string().nullable().optional().describe('URL of the resource, if applicable'), // Updated
+                        duration: z.string().nullable().optional().describe('Duration of video resources'),
+                        estimatedReadTime: z.string().nullable().optional().describe('Estimated time to read article resources'),
+                        questions: z.number().nullable().optional().describe('Number of questions for quiz resources'), // Updated
                       })),
-                    })),
+                    })).max(5), // Limit modules in the schema as well
                   }),
                 });
 
@@ -663,10 +663,10 @@ export async function POST(request: Request) {
                 resources: z.array(z.object({
                   type: z.enum(['video', 'article', 'quiz']).describe('Type of resource'),
                   title: z.string().describe('Title of the resource'),
-                  url: z.string().optional().describe('URL of the resource, if applicable'),
-                  duration: z.string().optional().describe('Duration of video resources'),
-                  estimatedReadTime: z.string().optional().describe('Estimated time to read article resources'),
-                  questions: z.number().optional().describe('Number of questions for quiz resources'),
+                  url: z.string().nullable().optional().describe('URL of the resource, if applicable'), // Updated
+                  duration: z.string().nullable().optional().describe('Duration of video resources'),
+                  estimatedReadTime: z.string().nullable().optional().describe('Estimated time to read article resources'),
+                  questions: z.number().nullable().optional().describe('Number of questions for quiz resources'), // Updated
                 })),
               })),
             }),

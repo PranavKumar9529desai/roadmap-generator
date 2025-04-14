@@ -158,10 +158,10 @@ export const coursePlan = pgTable('CoursePlan', {
     resources: {
       type: 'video' | 'article' | 'quiz';
       title: string;
-      url?: string;
-      duration?: string;
-      estimatedReadTime?: string;
-      questions?: number;
+      url?: string | null; // Allow null
+      duration?: string | null; // Already allows null
+      estimatedReadTime?: string | null; // Already allows null
+      questions?: number | null; // Allow null
     }[];
   }[]>(),
   createdAt: timestamp('createdAt').notNull().defaultNow(),

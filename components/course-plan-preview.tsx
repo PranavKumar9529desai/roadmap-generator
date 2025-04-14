@@ -10,9 +10,10 @@ type Topic = {
 type Resource = {
   type: 'video' | 'article' | 'quiz';
   title: string;
-  duration?: string;
-  estimatedReadTime?: string;
-  questions?: number;
+  url?: string | null; // Allow null or undefined
+  duration?: string | null; // Allow null or undefined
+  estimatedReadTime?: string | null; // Allow null or undefined
+  questions?: number | null; // Allow null or undefined
 };
 
 type Module = {
@@ -122,11 +123,17 @@ export function CoursePlanPreview({
                         {module.resources.map((resource, idx) => (
                           <li key={idx} className="flex items-center">
                             <span className="mr-1">{getResourceIcon(resource.type)}</span>
-                            <span>{resource.title}</span>
+                            {resource.url ? (
+                              <a href={resource.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-500">
+                                {resource.title}
+                              </a>
+                            ) : (
+                              <span>{resource.title}</span>
+                            )}
                             <span className="text-zinc-500 ml-1">
                               {resource.type === 'video' && resource.duration && `(${resource.duration})`}
                               {resource.type === 'article' && resource.estimatedReadTime && `(${resource.estimatedReadTime})`}
-                              {resource.type === 'quiz' && resource.questions && `(${resource.questions} questions)`}
+                              {resource.type === 'quiz' && resource.questions != null && `(${resource.questions} questions)`}
                             </span>
                           </li>
                         ))}

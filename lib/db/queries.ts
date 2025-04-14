@@ -442,10 +442,10 @@ export async function saveCoursePlan({
     resources: {
       type: 'video' | 'article' | 'quiz';
       title: string;
-      url?: string;
-      duration?: string;
-      estimatedReadTime?: string;
-      questions?: number;
+      url?: string | null; // Allow null
+      duration?: string | null; // Allow null
+      estimatedReadTime?: string | null; // Allow null
+      questions?: number | null; // Allow null
     }[];
   }[];
 }) {

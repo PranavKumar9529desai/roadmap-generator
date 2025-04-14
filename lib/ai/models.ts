@@ -5,36 +5,38 @@ export interface Model {
   label: string;
   apiIdentifier: string;
   description: string;
-  provider?: 'openai' | 'google';
+  provider?: "openai" | "google";
 }
 
 export const models: Array<Model> = [
-  // {
-  //   id: 'gpt-4o-mini',
-  //   label: 'GPT 4o mini',
-  //   apiIdentifier: 'gpt-4o-mini',
-  //   description: 'Small model for fast, lightweight tasks',
-  // },
-  // {
-  //   id: 'gpt-4o',
-  //   label: 'GPT 4o',
-  //   apiIdentifier: 'gpt-4o',
-  //   description: 'For complex, multi-step tasks',
-  // },
   {
-    id: 'learners-amigo',
+    id: "learners-amigo", // Your internal identifier
     label: "Learner's Amigo Recommender",
-    apiIdentifier: 'gemini-1.5-flash',
-    provider: 'google',
-    description: 'Personalized course recommender for users'
+    apiIdentifier: "gemini-2.0-flash", // This one is fine for free tier
+    provider: "google",
+    description:
+      "Personalized course recommender for users (using Gemini 2.0 Flash)",
   },
   {
-    id: 'gemini-1.5-flash',
-    label: 'Gemini 1.5 Flash',
-    apiIdentifier: 'gemini-1.5-flash',
-    provider: 'google',
-    description: "Google's fast and versatile multimodal model"
+    id: "gemini-2.0-flash-actual",
+    label: "Gemini 2.0 Flash",
+    apiIdentifier: "gemini-2.0-flash", // This one is fine for free tier
+    provider: "google",
+    description:
+      "Google's fast and efficient multimodal model for various tasks.",
   },
+
+  // --- THIS IS THE CORRECTED BLOCK ---
+  {
+    id: "gemini-2.5-pro-experimental", // Changed ID
+    label: "Gemini 2.5 Pro Experimental", // Changed Label
+    // Use the experimental identifier that works with the free tier
+    apiIdentifier: "gemini-2.5-pro-exp-03-25",
+    provider: "google",
+    description: "Google's advanced experimental model for complex reasoning (Free Tier available)."
+  },
+  // --- END OF CORRECTED BLOCK ---
+
 ] as const;
 
-export const DEFAULT_MODEL_NAME: string = 'learners-amigo';
+export const DEFAULT_MODEL_NAME: string = "learners-amigo";

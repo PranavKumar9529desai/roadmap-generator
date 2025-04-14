@@ -43,6 +43,13 @@
       "when": 1744634776497,
       "tag": "0005_flaky_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1744651778835,
+      "tag": "0006_green_zuras",
+      "breakpoints": true
     }
   ]
 }
