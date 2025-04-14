@@ -95,7 +95,7 @@ export const suggestion = pgTable(
     documentId: uuid('documentId').notNull(),
     documentCreatedAt: timestamp('documentCreatedAt').notNull(),
     originalText: text('originalText').notNull(),
-    suggestedText: text('suggestedText').notNull(),
+  suggestedText: text('suggestedText').notNull(),
     description: text('description'),
     isResolved: boolean('isResolved').notNull().default(false),
     userId: uuid('userId')

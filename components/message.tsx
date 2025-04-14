@@ -174,12 +174,22 @@ const PurePreviewMessage = ({
                                 <h3 className="text-sm font-medium text-green-800">Profile Created</h3>
                                 <div className="mt-2 text-sm text-green-700">
                                   <p>User profile has been created{result?.profile?.userProfile?.name ? ` for ${result.profile.userProfile.name}` : ''}</p>
-                                  <p className="mt-1">Visit your <a href="/dashboard" className="font-medium underline" onClick={(e) => {
-                                    // Force a page reload to ensure fresh data
-                                    e.preventDefault();
-                                    window.location.href = '/dashboard';
-                                  }}>dashboard</a> to see your profile!</p>
+                                  {result?.warning && (
+                                    <p className="mt-1 text-amber-600">{result.warning}</p>
+                                  )}
                                 </div>
+                                {result?.showDashboardButton && (
+                                  <div className="mt-3">
+                                    <Button 
+                                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                      onClick={() => {
+                                        window.location.href = result.dashboardUrl || '/dashboard';
+                                      }}
+                                    >
+                                      View Your Profile
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

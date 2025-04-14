@@ -15,6 +15,8 @@ export interface UserProfile {
   learningGoals?: string;
   avatarFallback: string;
   currentGoal?: string;
+  dailyTimeCommitment?: string; // How much time user can spend daily
+  priorKnowledge?: string; // User's prior knowledge level
   updatedAt: Date; // Track when the profile was last updated
 }
 
@@ -58,6 +60,13 @@ export class MySubClassedDexie extends Dexie {
       placedEvents: 'id, start, title', // Keep existing table
       userProfiles: 'id, name, updatedAt', // Keep existing table
       userActivities: '++id, date, type' // New table for tracking user activities
+    });
+    
+    // Add version upgrade for new profile fields
+    this.version(4).stores({
+      placedEvents: 'id, start, title', // Keep existing table
+      userProfiles: 'id, name, updatedAt', // Keep existing table schema
+      userActivities: '++id, date, type' // Keep existing table
     });
   }
 }

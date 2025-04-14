@@ -468,8 +468,10 @@ export async function POST(request: Request) {
               pastExperience: z.string().optional().describe('User\'s past work or relevant experience.'),
               learningGoals: z.string().describe('User\'s learning objectives and aspirations.'),
               currentGoal: z.string().describe('The specific current learning goal for the user to focus on.'),
+              dailyTimeCommitment: z.string().optional().describe('How much time the user can dedicate daily to learning.'),
+              priorKnowledge: z.string().optional().describe('The user\'s prior knowledge level in the subject area.'),
             }),
-            execute: async ({ name, education, pastExperience, learningGoals, currentGoal }) => {
+            execute: async ({ name, education, pastExperience, learningGoals, currentGoal, dailyTimeCommitment, priorKnowledge }) => {
               console.log(`Generating profile for user: ${name}`);
               
               try {
@@ -483,7 +485,9 @@ export async function POST(request: Request) {
                   pastExperience: pastExperience || '',
                   learningGoals: learningGoals || '',
                   avatarFallback: name.charAt(0).toUpperCase(),
-                  currentGoal
+                  currentGoal,
+                  dailyTimeCommitment: dailyTimeCommitment || '',
+                  priorKnowledge: priorKnowledge || ''
                 });
                 
                 // Record this as a profile creation activity
@@ -491,7 +495,9 @@ export async function POST(request: Request) {
                 
                 return {
                   success: true,
-                  message: `User profile created for ${name}`,
+                  message: `Profile created successfully for ${name}! You can now view your complete profile and learning activity on the dashboard.`,
+                  showDashboardButton: true,
+                  dashboardUrl: '/dashboard',
                   profile: {
                     userProfile: {
                       name,
@@ -499,6 +505,8 @@ export async function POST(request: Request) {
                       pastExperience: pastExperience || '',
                       learningGoals: learningGoals || '',
                       avatarFallback: name.charAt(0).toUpperCase(),
+                      dailyTimeCommitment: dailyTimeCommitment || '',
+                      priorKnowledge: priorKnowledge || ''
                     },
                     currentGoal
                   }
@@ -513,6 +521,8 @@ export async function POST(request: Request) {
                     pastExperience: pastExperience || '',
                     learningGoals: learningGoals || '',
                     avatarFallback: name.charAt(0).toUpperCase(),
+                    dailyTimeCommitment: dailyTimeCommitment || '',
+                    priorKnowledge: priorKnowledge || ''
                   },
                   currentGoal
                 };
@@ -520,7 +530,9 @@ export async function POST(request: Request) {
                 // Return a partial success with the profile data even if storage failed
                 return {
                   success: true,
-                  message: `User profile processed for ${name} (Note: Profile storage encountered an issue but the information was processed)`,
+                  message: `Profile processed for ${name}. You can view it on the dashboard.`,
+                  showDashboardButton: true,
+                  dashboardUrl: '/dashboard',
                   profile: profileData,
                   warning: "Your profile information was processed but there was an issue with browser storage. Your profile data may not persist between sessions."
                 };
