@@ -475,10 +475,29 @@ export async function POST(request: Request) {
               console.log(`Generating profile for user: ${name}`);
               
               try {
-                // Import the database helper function
-                const { saveUserProfile, recordActivity } = await import('../../../lib/db');
+                // First ensure we save to PostgreSQL via Drizzle
+                if (session.user?.id) {
+                  const { saveUserProfileToDB } = await import('@/lib/db/queries');
+                  
+                  // Save to PostgreSQL database
+                  await saveUserProfileToDB({
+                    userId: session.user.id,
+                    name,
+                    education,
+                    pastExperience,
+                    learningGoals,
+                    currentGoal,
+                    dailyTimeCommitment,
+                    priorKnowledge,
+                    avatarFallback: name.charAt(0).toUpperCase()
+                  });
+                  
+                  console.log(`Profile for ${name} saved to PostgreSQL database`);
+                }
                 
-                // Save to IndexedDB
+                // Also save to IndexedDB for client-side usage (as backup)
+                const { saveUserProfile, recordActivity } = await import('@/app/lib/db');
+                
                 await saveUserProfile({
                   name,
                   education: education || '',
@@ -495,7 +514,7 @@ export async function POST(request: Request) {
                 
                 return {
                   success: true,
-                  message: `Profile created successfully for ${name}! You can now view your complete profile and learning activity on the dashboard.`,
+                  message: `Profile created for ${name}! You can now view your complete profile and learning activity on the dashboard.`,
                   showDashboardButton: true,
                   dashboardUrl: '/dashboard',
                   profile: {
@@ -513,7 +532,8 @@ export async function POST(request: Request) {
                 };
               } catch (error) {
                 console.error('Error saving user profile:', error);
-                // Create a profile object even if saving to IndexedDB failed
+                
+                // Create a profile object even if saving failed
                 const profileData = {
                   userProfile: {
                     name,
@@ -534,7 +554,7 @@ export async function POST(request: Request) {
                   showDashboardButton: true,
                   dashboardUrl: '/dashboard',
                   profile: profileData,
-                  warning: "Your profile information was processed but there was an issue with browser storage. Your profile data may not persist between sessions."
+                  warning: "Your profile information was processed but there was an issue with storage. Your profile data may not persist between sessions."
                 };
               }
             },

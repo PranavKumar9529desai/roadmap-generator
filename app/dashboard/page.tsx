@@ -25,6 +25,7 @@ interface UserProfile {
   priorKnowledge?: string;
   avatarUrl?: string;
   avatarFallback: string;
+  currentGoal?: string;
 }
 
 interface DashboardProps {
@@ -307,6 +308,7 @@ export default function Dashboard() {
   const router = useRouter();
   // Use isClientSide to prevent hydration issues
   const [isClientSide, setIsClientSide] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // This is where you would fetch data from an API or other data source
   const [activityData, setActivityData] = useState<Activity[]>(() => {
@@ -322,72 +324,44 @@ export default function Dashboard() {
     activityData: activityData, // Make sure activity data is included from the start
   });
 
-  // Function to fetch the user profile
+  // Function to fetch the user profile from our API endpoint
   const fetchUserProfile = async () => {
+    setIsLoading(true);
     try {
-      // Import the database helper functions
-      const { getUserProfile, getUserActivities } = await import('../lib/db');
-
-      // Get the user profile data
-      const userProfile = await getUserProfile();
-
-      // Get user activities for the heatmap
-      const activities = await getUserActivities();
-
-      // Convert activities to the format needed for the activity calendar
-      const formattedActivities: Activity[] = activities.map((activity) => {
-        // Determine level based on count
-        let level: 0 | 1 | 2 | 3 | 4;
-        if (activity.count === 0) level = 0;
-        else if (activity.count < 3) level = 1;
-        else if (activity.count < 5) level = 2;
-        else if (activity.count < 8) level = 3;
-        else level = 4;
-
-        return {
-          date: activity.date,
-          count: activity.count,
-          level,
-        };
-      });
-
-      // Update the activity data if we have activities
-      if (formattedActivities.length > 0) {
-        setActivityData(formattedActivities);
+      // Fetch the profile data from our API endpoint
+      const response = await fetch('/api/profile');
+      
+      if (!response.ok) {
+        console.error('Failed to fetch profile:', response.statusText);
+        return;
       }
-
-      if (userProfile) {
-        console.log('Loaded user profile:', userProfile);
-        // Update the profile data from the database
+      
+      const data = await response.json();
+      
+      if (data.userProfile) {
+        console.log('Loaded user profile from API:', data.userProfile);
+        // Update the profile data from the API
         setProfileData((prev) => ({
           ...prev,
           userProfile: {
-            name: userProfile.name,
-            education: userProfile.education || '',
-            pastExperience: userProfile.pastExperience || '',
-            learningGoals: userProfile.learningGoals || '',
-            dailyTimeCommitment: userProfile.dailyTimeCommitment || '',
-            priorKnowledge: userProfile.priorKnowledge || '',
-            avatarFallback: userProfile.avatarFallback,
+            name: data.userProfile.name,
+            education: data.userProfile.education || '',
+            pastExperience: data.userProfile.pastExperience || '',
+            learningGoals: data.userProfile.learningGoals || '',
+            dailyTimeCommitment: data.userProfile.dailyTimeCommitment || '',
+            priorKnowledge: data.userProfile.priorKnowledge || '',
+            avatarFallback: data.userProfile.avatarFallback,
           },
-          currentGoal: userProfile.currentGoal || 'Learning React in 10 days',
-          // Use the loaded activity data
-          activityData:
-            formattedActivities.length > 0 ? formattedActivities : activityData,
-          // Update total activities count
-          totalActivities: {
-            count: activities.reduce(
-              (total, activity) => total + activity.count,
-              0,
-            ),
-            year: new Date().getFullYear(),
-          },
+          currentGoal: data.userProfile.currentGoal || 'Learning React in 10 days',
+          // We keep the existing activity data for now
         }));
       } else {
-        console.log('No user profile found, using defaults');
+        console.log('No user profile found in API response, using defaults');
       }
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      console.error('Failed to fetch user profile from API:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -396,29 +370,15 @@ export default function Dashboard() {
     setIsClientSide(true);
   }, []);
 
-  // Effect to refresh the data when the component mounts
+  // Effect to fetch the profile when the component mounts on the client side
   useEffect(() => {
     if (!isClientSide) return;
     
-    // Force a refresh of the profile data when the dashboard is visited
     fetchUserProfile();
-
-    // Add a small delay to ensure any pending DB operations are complete
-    const refreshTimer = setTimeout(() => {
-      fetchUserProfile();
-    }, 500);
-
-    return () => clearTimeout(refreshTimer);
-  }, [isClientSide, fetchUserProfile]); // Added fetchUserProfile dependency
-
-  // Effect to fetch user profile from IndexedDB or in-memory storage
-  useEffect(() => {
-    if (!isClientSide) return;
-    fetchUserProfile();
-  }, [activityData, isClientSide, fetchUserProfile]); // Added fetchUserProfile dependency
+  }, [isClientSide]);
 
   // Only render the dashboard when on the client side to prevent hydration issues
-  if (!isClientSide) {
+  if (!isClientSide || isLoading) {
     return <div className="p-8 text-center">Loading dashboard...</div>;
   }
 

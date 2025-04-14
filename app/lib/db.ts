@@ -1,4 +1,6 @@
 import Dexie, { type Table } from 'dexie';
+import { getUserProfileByUserId } from '@/lib/db/queries';
+import { auth } from '../(auth)/auth';
 
 export interface PlacedEvent {
   id: string; // Corresponds to the event ID from draggableEventsList
@@ -30,9 +32,11 @@ export interface UserActivity {
 // Check if IndexedDB is available in the current environment
 const isIndexedDBAvailable = () => {
   try {
-    return typeof window !== 'undefined' && 
-           typeof window.indexedDB !== 'undefined' &&
-           window.indexedDB !== null;
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.indexedDB !== 'undefined' &&
+      window.indexedDB !== null
+    );
   } catch (e) {
     return false;
   }
@@ -48,25 +52,25 @@ export class MySubClassedDexie extends Dexie {
     this.version(1).stores({
       placedEvents: 'id, start, title', // Primary key 'id', index 'start' and 'title'
     });
-    
+
     // Add version upgrade to add userProfiles table
     this.version(2).stores({
       placedEvents: 'id, start, title', // Keep existing table
-      userProfiles: 'id, name, updatedAt' // New table for user profiles
+      userProfiles: 'id, name, updatedAt', // New table for user profiles
     });
-    
+
     // Add version upgrade to add userActivities table
     this.version(3).stores({
       placedEvents: 'id, start, title', // Keep existing table
       userProfiles: 'id, name, updatedAt', // Keep existing table
-      userActivities: '++id, date, type' // New table for tracking user activities
+      userActivities: '++id, date, type', // New table for tracking user activities
     });
-    
+
     // Add version upgrade for new profile fields
     this.version(4).stores({
       placedEvents: 'id, start, title', // Keep existing table
       userProfiles: 'id, name, updatedAt', // Keep existing table schema
-      userActivities: '++id, date, type' // Keep existing table
+      userActivities: '++id, date, type', // Keep existing table
     });
   }
 }
@@ -78,71 +82,117 @@ export const db = isIndexedDBAvailable() ? new MySubClassedDexie() : null;
 const memoryStore = {
   userProfile: null as UserProfile | null,
   activities: [] as UserActivity[],
-  placedEvents: [] as PlacedEvent[]
+  placedEvents: [] as PlacedEvent[],
 };
 
 // Helper function to get user profile
 export async function getUserProfile(): Promise<UserProfile | undefined> {
-  if (db) {
-    return await db.userProfiles.get('user');
-  } else {
-    console.warn('IndexedDB not available, using in-memory storage for user profile');
-    return memoryStore.userProfile || undefined;
+  try {
+    // First check if we can get the profile from Drizzle database
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (userId) {
+      // Try to get the profile from Drizzle database
+      const dbProfile = await getUserProfileByUserId(userId);
+
+      if (dbProfile) {
+        // Convert Drizzle profile to our UserProfile format
+        return {
+          id: 'user',
+          name: dbProfile.name,
+          education: dbProfile.education || undefined,
+          pastExperience: dbProfile.pastExperience || undefined,
+          learningGoals: dbProfile.learningGoals || undefined,
+          dailyTimeCommitment: dbProfile.dailyTimeCommitment || undefined,
+          priorKnowledge: dbProfile.priorKnowledge || undefined,
+          currentGoal: dbProfile.currentGoal || undefined,
+          avatarFallback:
+            dbProfile.avatarFallback || dbProfile.name.charAt(0).toUpperCase(),
+          updatedAt: dbProfile.updatedAt || new Date(),
+        };
+      }
+    }
+
+    // Fall back to IndexedDB or in-memory storage if no profile in database
+    if (db) {
+      return await db.userProfiles.get('user');
+    } else {
+      console.warn(
+        'IndexedDB not available, using in-memory storage for user profile',
+      );
+      return memoryStore.userProfile || undefined;
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+
+    // Fall back to local storage in case of error
+    if (db) {
+      return await db.userProfiles.get('user');
+    } else {
+      return memoryStore.userProfile || undefined;
+    }
   }
 }
 
 // Helper function to save user profile
-export async function saveUserProfile(profile: Omit<UserProfile, 'id' | 'updatedAt'>): Promise<string> {
+export async function saveUserProfile(
+  profile: Omit<UserProfile, 'id' | 'updatedAt'>,
+): Promise<string> {
   const userProfile: UserProfile = {
     id: 'user', // Always use 'user' as ID for single-user apps
     ...profile,
-    updatedAt: new Date()
+    updatedAt: new Date(),
   };
-  
+
   if (db) {
     await db.userProfiles.put(userProfile);
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for user profile');
+    console.warn(
+      'IndexedDB not available, using in-memory storage for user profile',
+    );
     memoryStore.userProfile = userProfile;
   }
-  
+
   // Record this as an activity
   await recordActivity('profile-update');
-  
+
   return userProfile.id;
 }
 
 // Helper function to record user activity
 export async function recordActivity(type = 'chat'): Promise<void> {
   const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
-  
+
   if (db) {
     // Try to find an existing activity for today
     const existingActivity = await db.userActivities
       .where('date')
       .equals(today)
       .first();
-    
+
     if (existingActivity && existingActivity.id !== undefined) {
       // Update existing activity count
       await db.userActivities.update(existingActivity.id, {
-        count: existingActivity.count + 1
+        count: existingActivity.count + 1,
       });
     } else {
       // Create new activity for today
       await db.userActivities.add({
         date: today,
         count: 1,
-        type
+        type,
       });
     }
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for activity');
+    console.warn(
+      'IndexedDB not available, using in-memory storage for activity',
+    );
     // Look for existing activity in memory store
     const existingActivityIndex = memoryStore.activities.findIndex(
-      activity => activity.date === today
+      (activity) => activity.date === today,
     );
-    
+
     if (existingActivityIndex >= 0) {
       // Update existing activity
       memoryStore.activities[existingActivityIndex].count += 1;
@@ -151,7 +201,7 @@ export async function recordActivity(type = 'chat'): Promise<void> {
       memoryStore.activities.push({
         date: today,
         count: 1,
-        type
+        type,
       });
     }
   }
@@ -162,7 +212,9 @@ export async function getUserActivities(): Promise<UserActivity[]> {
   if (db) {
     return await db.userActivities.toArray();
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for activities');
+    console.warn(
+      'IndexedDB not available, using in-memory storage for activities',
+    );
     return [...memoryStore.activities];
   }
 }
@@ -174,18 +226,24 @@ export async function getPlacedEvents(): Promise<PlacedEvent[]> {
   if (db) {
     return await db.placedEvents.toArray();
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for placed events');
+    console.warn(
+      'IndexedDB not available, using in-memory storage for placed events',
+    );
     return [...memoryStore.placedEvents];
   }
 }
 
 // Get a placed event by ID
-export async function getPlacedEventById(id: string): Promise<PlacedEvent | undefined> {
+export async function getPlacedEventById(
+  id: string,
+): Promise<PlacedEvent | undefined> {
   if (db) {
     return await db.placedEvents.get(id);
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for placed event');
-    return memoryStore.placedEvents.find(event => event.id === id);
+    console.warn(
+      'IndexedDB not available, using in-memory storage for placed event',
+    );
+    return memoryStore.placedEvents.find((event) => event.id === id);
   }
 }
 
@@ -194,19 +252,23 @@ export async function savePlacedEvent(event: PlacedEvent): Promise<string> {
   if (db) {
     await db.placedEvents.put(event);
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for placed event');
+    console.warn(
+      'IndexedDB not available, using in-memory storage for placed event',
+    );
     // Remove existing event with same ID if it exists
-    const existingIndex = memoryStore.placedEvents.findIndex(e => e.id === event.id);
+    const existingIndex = memoryStore.placedEvents.findIndex(
+      (e) => e.id === event.id,
+    );
     if (existingIndex >= 0) {
       memoryStore.placedEvents.splice(existingIndex, 1);
     }
     // Add the new/updated event
     memoryStore.placedEvents.push(event);
   }
-  
+
   // Record this as an activity
   await recordActivity('roadmap-update');
-  
+
   return event.id;
 }
 
@@ -215,13 +277,17 @@ export async function deletePlacedEvent(id: string): Promise<void> {
   if (db) {
     await db.placedEvents.delete(id);
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for placed event deletion');
-    const existingIndex = memoryStore.placedEvents.findIndex(e => e.id === id);
+    console.warn(
+      'IndexedDB not available, using in-memory storage for placed event deletion',
+    );
+    const existingIndex = memoryStore.placedEvents.findIndex(
+      (e) => e.id === id,
+    );
     if (existingIndex >= 0) {
       memoryStore.placedEvents.splice(existingIndex, 1);
     }
   }
-  
+
   // Record this as an activity
   await recordActivity('roadmap-delete');
 }
@@ -231,7 +297,9 @@ export async function clearPlacedEvents(): Promise<void> {
   if (db) {
     await db.placedEvents.clear();
   } else {
-    console.warn('IndexedDB not available, using in-memory storage for clearing placed events');
+    console.warn(
+      'IndexedDB not available, using in-memory storage for clearing placed events',
+    );
     memoryStore.placedEvents = [];
   }
 }

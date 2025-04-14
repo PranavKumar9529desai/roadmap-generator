@@ -19,6 +19,26 @@ export const user = pgTable('User', {
 
 export type User = InferSelectModel<typeof user>;
 
+// UserProfile table for storing user profile information
+export const userProfile = pgTable('UserProfile', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  name: varchar('name', { length: 128 }).notNull(),
+  education: text('education'),
+  pastExperience: text('pastExperience'),
+  learningGoals: text('learningGoals'),
+  dailyTimeCommitment: varchar('dailyTimeCommitment', { length: 64 }),
+  priorKnowledge: varchar('priorKnowledge', { length: 64 }),
+  currentGoal: text('currentGoal'),
+  avatarFallback: varchar('avatarFallback', { length: 10 }),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
+
+export type UserProfile = InferSelectModel<typeof userProfile>;
+
 export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   createdAt: timestamp('createdAt').notNull(),
@@ -95,7 +115,7 @@ export const suggestion = pgTable(
     documentId: uuid('documentId').notNull(),
     documentCreatedAt: timestamp('documentCreatedAt').notNull(),
     originalText: text('originalText').notNull(),
-  suggestedText: text('suggestedText').notNull(),
+    suggestedText: text('suggestedText').notNull(),
     description: text('description'),
     isResolved: boolean('isResolved').notNull().default(false),
     userId: uuid('userId')

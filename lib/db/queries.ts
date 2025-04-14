@@ -15,6 +15,8 @@ import {
   type Message,
   message,
   vote,
+  userProfile,
+  type UserProfile,
 } from './schema';
 import type { BlockKind } from '@/components/block';
 
@@ -329,6 +331,86 @@ export async function updateChatVisiblityById({
     return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (error) {
     console.error('Failed to update chat visibility in database');
+    throw error;
+  }
+}
+
+export async function saveUserProfileToDB({
+  userId,
+  name,
+  education,
+  pastExperience,
+  learningGoals,
+  currentGoal,
+  dailyTimeCommitment,
+  priorKnowledge,
+  avatarFallback,
+}: {
+  userId: string;
+  name: string;
+  education?: string;
+  pastExperience?: string;
+  learningGoals?: string;
+  currentGoal?: string;
+  dailyTimeCommitment?: string;
+  priorKnowledge?: string;
+  avatarFallback?: string;
+}) {
+  try {
+    // Check if a profile already exists for this user
+    const existingProfile = await db
+      .select()
+      .from(userProfile)
+      .where(eq(userProfile.userId, userId));
+
+    if (existingProfile.length > 0) {
+      // Update existing profile
+      return await db
+        .update(userProfile)
+        .set({
+          name,
+          education,
+          pastExperience,
+          learningGoals,
+          currentGoal,
+          dailyTimeCommitment,
+          priorKnowledge,
+          avatarFallback: avatarFallback || name.charAt(0).toUpperCase(),
+          updatedAt: new Date(),
+        })
+        .where(eq(userProfile.userId, userId));
+    } else {
+      // Create new profile
+      return await db.insert(userProfile).values({
+        userId,
+        name,
+        education,
+        pastExperience,
+        learningGoals,
+        currentGoal,
+        dailyTimeCommitment,
+        priorKnowledge,
+        avatarFallback: avatarFallback || name.charAt(0).toUpperCase(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+  } catch (error) {
+    console.error('Failed to save user profile to database:', error);
+    throw error;
+  }
+}
+
+export async function getUserProfileByUserId(userId: string): Promise<UserProfile | null> {
+  try {
+    const profiles = await db
+      .select()
+      .from(userProfile)
+      .where(eq(userProfile.userId, userId));
+    
+    return profiles.length > 0 ? profiles[0] : null;
+  } catch (error) {
+    console.error('Failed to get user profile from database:', error);
     throw error;
   }
 }
