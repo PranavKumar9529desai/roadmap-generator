@@ -3,6 +3,7 @@ import {
   convertToCoreMessages,
   createDataStreamResponse,
   experimental_generateImage,
+  generateObject,
   streamObject,
   streamText,
 } from 'ai';
@@ -575,8 +576,9 @@ export async function POST(request: Request) {
               console.log('Generating course plan for goal:', currentGoal);
               
               try {
-                // Generate a course plan using the AI
-                const { object: coursePlanData } = await streamObject({
+                // Generate a course plan using the AI with generateObject
+                console.log('Attempting to call generateObject for course plan...'); // Log before the call
+                const { object: coursePlanData } = await generateObject({
                   model: customModel(model.apiIdentifier, model.provider),
                   system: 'You are an expert curriculum designer. Create a detailed, structured course plan based on the user\'s current learning goal, prior knowledge, and available time. The course should be structured like online learning platforms such as Udemy or Coursera, with clear modules, topics, resources and time estimates.',
                   prompt: `
@@ -616,7 +618,9 @@ export async function POST(request: Request) {
                   }),
                 });
 
-                // Redirect to the course page
+                console.log('generateObject call successful. Course plan data received:', coursePlanData); // Log after successful call
+
+                // Return the result containing the full course plan
                 return {
                   success: true,
                   message: "Your course plan has been generated successfully. Click below to view your course plan.",
@@ -625,10 +629,15 @@ export async function POST(request: Request) {
                   coursePlan: coursePlanData,
                 };
               } catch (error) {
-                console.error('Error generating course plan:', error);
+                console.error('--- ERROR generating course plan ---');
+                console.error('Error Name:', error.name);
+                console.error('Error Message:', error.message);
+                console.error('Error Stack:', error.stack);
+                console.error('Full Error Object:', error);
+                console.error('------------------------------------');
                 return {
                   success: false,
-                  message: "There was an error generating your course plan. Please try again.",
+                  message: "There was an error generating your course plan. Please check the server logs for details.",
                 };
               }
             },
@@ -685,6 +694,12 @@ export async function POST(request: Request) {
                 // Record the activity
                 const { recordActivity } = await import('@/app/lib/db');
                 await recordActivity('course-plan-create');
+                
+                // Write to the data stream to trigger a redirect
+                dataStream.writeData({
+                  type: 'course-plan-save',
+                  content: { courseId: session.user.id }
+                });
                 
                 return {
                   success: true,

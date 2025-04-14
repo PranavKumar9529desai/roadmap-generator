@@ -22,8 +22,10 @@ type DataStreamDelta = {
     | 'finish'
     | 'user-message-id'
     | 'kind'
-    | 'roadmap-creation';
-  content: string | Suggestion | RoadmapEvent[];
+    | 'roadmap-creation'
+    | 'course-plan-creation'
+    | 'course-plan-save';
+  content: string | Suggestion | RoadmapEvent[] | any;
 };
 
 export function DataStreamHandler({ id }: { id: string }) {
@@ -33,6 +35,9 @@ export function DataStreamHandler({ id }: { id: string }) {
   const lastProcessedIndex = useRef(-1);
   const { setRoadmapData } = useRoadmap();
   const router = useRouter();
+
+  // Store a reference to any redirects that need to happen
+  const redirectRef = useRef<string | null>(null);
 
   const { mutate } = useSWRConfig();
   const [optimisticSuggestions, setOptimisticSuggestions] = useState<
@@ -46,6 +51,18 @@ export function DataStreamHandler({ id }: { id: string }) {
       mutate(url, optimisticSuggestions, false);
     }
   }, [optimisticSuggestions, mutate]);
+
+  // Handle redirect after stream completion
+  useEffect(() => {
+    if (redirectRef.current) {
+      const redirectUrl = redirectRef.current;
+      redirectRef.current = null;
+      // Small timeout to ensure UI updates before redirect
+      setTimeout(() => {
+        router.push(redirectUrl);
+      }, 500);
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!dataStream?.length) return;
@@ -66,6 +83,13 @@ export function DataStreamHandler({ id }: { id: string }) {
 
         setRoadmapData(roadmapTitle, roadmapEvents);
         
+        return;
+      }
+
+      if (delta.type === 'course-plan-save') {
+        console.log('Course plan saved, setting redirect to /course');
+        // Set the redirect URL reference
+        redirectRef.current = '/course';
         return;
       }
 
