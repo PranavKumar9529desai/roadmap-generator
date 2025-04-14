@@ -19,7 +19,7 @@ import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
-import RoadmapButton from './roadmap-button';
+import { RoadmapButton } from './roadmap-button';
 import { useRoadmap } from '@/contexts/RoadmapContext';
 import { ViewCourseButton } from './view-course-button';
 import { ViewProfileButton } from './view-profile-button';
@@ -214,7 +214,7 @@ const PurePreviewMessage = ({
                                   modules={result.coursePlan.modules}
                                 />
                                 <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-                                  <p>Review this course plan and provide feedback. You can suggest adding new topics, removing existing ones, or adjusting the structure. Once you're satisfied, say "Save this course plan" and I'll save it for you.</p>
+                                  <p>Review this course plan and provide feedback. You can suggest adding new topics, removing existing ones, or adjusting the structure. Once you&apos;re satisfied, say &quot;Save this course plan&quot; and I&apos;ll save it for you.</p>
                                 </div>
                               </div>
                             )}

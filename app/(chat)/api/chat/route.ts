@@ -630,9 +630,11 @@ export async function POST(request: Request) {
                 };
               } catch (error) {
                 console.error('--- ERROR generating course plan ---');
-                console.error('Error Name:', error.name);
-                console.error('Error Message:', error.message);
-                console.error('Error Stack:', error.stack);
+                if (error instanceof Error) {
+                  console.error('Error Name:', error.name);
+                  console.error('Error Message:', error.message);
+                  console.error('Error Stack:', error.stack);
+                }
                 console.error('Full Error Object:', error);
                 console.error('------------------------------------');
                 return {

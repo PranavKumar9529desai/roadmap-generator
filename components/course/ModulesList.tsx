@@ -15,8 +15,8 @@ export const ModulesList: React.FC<ModulesListProps> = ({ coursePlan }) => {
   // Initialize completed topics from the coursePlan data
   useEffect(() => {
     const initialCompletedTopics: Record<string, boolean> = {};
-    coursePlan.modules.forEach(module => {
-      module.topics.forEach(topic => {
+    (coursePlan.modules ?? []).forEach(module => {
+      module.topics?.forEach(topic => {
         if (topic.completed) {
           initialCompletedTopics[topic.id] = true;
         }
@@ -84,7 +84,7 @@ export const ModulesList: React.FC<ModulesListProps> = ({ coursePlan }) => {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold mt-8 mb-4">Course Modules</h2>
-      {coursePlan.modules.map(module => (
+      {(coursePlan.modules ?? []).map(module => (
         <ModuleCard
           key={module.id}
           module={module}

@@ -94,7 +94,7 @@ export default function CoursePage() {
         <div className="max-w-md mx-auto bg-white dark:bg-zinc-900 rounded-lg shadow-sm p-8 border border-zinc-200 dark:border-zinc-800">
           <h1 className="text-2xl font-bold mb-4">No Course Plans Found</h1>
           <p className="mb-6 text-zinc-600 dark:text-zinc-400">
-            You don't have any course plans yet. Chat with the assistant to create
+            You don&apos;t have any course plans yet. Chat with the assistant to create
             one!
           </p>
           <Button 

@@ -43,6 +43,11 @@ export async function PUT(request: Request) {
     if (currentPlan.userId !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    // Check if modules exist
+    if (!currentPlan.modules) {
+      return NextResponse.json({ error: 'Invalid course plan structure' }, { status: 400 });
+    }
     
     // Update the completed status of the topic
     const updatedModules = currentPlan.modules.map(module => {
@@ -66,6 +71,8 @@ export async function PUT(request: Request) {
     // Save the updated course plan
     await saveCoursePlan({
       ...currentPlan,
+      learningObjectives: currentPlan.learningObjectives ?? undefined,
+      totalEstimatedTime: currentPlan.totalEstimatedTime ?? undefined,
       modules: updatedModules
     });
     
